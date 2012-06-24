@@ -1,0 +1,122 @@
+THIS FILE INCLUDES USAGE INSTRUCTIONS 
+We provide a freely available Segmentation Toolbox that 
+can readily be used for image segmentation tasks. 
+
+Please acknowledge the authors if you are using this
+ToolBox.
+
+
+Readme-file
+===========
+
+Author: Di, Wei
+Email : vanessa.wdi@gmail.com
+Date  : April 3rd, 2011
+
+
+General Info
+=============
+The original LibSVM Python version does not have the interface to compute
+the value of |w|^2, which can be used for computing the distance of a given sample
+towards the hyperplane. 
+
+
+We modified the C++ files and corresponding python functions, also re-built the dll file.
+Now the svm-modle object contans the following additional attrs:
++) w_2		(|w|^2)
++) rho		
++) nSV		
++) probA	
++) probB
+
+For detailed information about the above variables, please check svm.h
+
+Note: 
+1. These files are run under window paltform
+2. Modification is currently only for C-SVM
+3. The re-built dll file has been already put under folder ./python
+4. Test run-file: wdi_libsvm_extend_testing.py
+5. Testing data are in folder ./data/letters  
+
+
+
+Modification in C++ files
+===========================
+In total, 3 structs are modified (w_2 used to denote |w|^2)
+ -1- add member of w_2 to svm_model			(svm.h)
+ -2- add member of w_2 to SolutionInfo			(svm.cpp)
+ -3- add member of w_2 to decision_function		(svm.cpp)
+
+w_2 is computed in function: 'solve_c_svc' by:
+	si->w_2 = 2*(si->obj + sum_alpha);
+and then recored in SolutionInfo si.
+The path follows: 
+      si(SolutionInfo) --> f (decision_function) --> w_2 (svm_model)
+
+Multiple places are updated, please use search 'w_2' to find each 
+changed line. We use the same common name 'w_2' in each struct, thus, 
+you will find all changes corresponding to all the 3 different sturcts.
+
+5 additional functions are defined in svm.cpp, which
+can return the values in svm-model, including:
+w_2				/* in this model, we added this variable w_2[k*(k-1)/2]*/
+rho				/* constants in decision functions (rho[k*(k-1)/2]) */
+nSV				/* number of SVs for each class (nSV[k]) */
+probA		 		/* pariwise probability information */
+robB
+please check the svm.h file for the definition of each variable.
+
+These are functions will serve as the interface to Python. 
+To add more function, you need to also update the svm.h and svm.def
+Then, build the files to obtain new libsvm.dll file.
+For building dll file under windows, check the Q-A page:
+http://www.csie.ntu.edu.tw/~cjlin/libsvm/faq.html#f211
+With these additional functions, you also need to update svm.py by
+adding new def-functions, and the interface to load c-functions in python
+
+
+
+Modification in python files
+============================
+
+[+] In svm.py added functions to 'class svm_model':
+	- get_w2_vector
+	- get_nSV
+	- get_rho_vector
+	- get_probA_vector
+	- get_probB_vector
+
+And functions interacting with c-files:
+# Functions to return w_2, rho, nSV, probA and probB, repectively
+fillprototype(libsvm.svm_get_model_w2_vector, None, [POINTER(svm_model), POINTER(c_double)])
+fillprototype(libsvm.svm_get_model_rho_vector, None, [POINTER(svm_model), POINTER(c_double)])
+fillprototype(libsvm.svm_get_model_nSV_vector, None, [POINTER(svm_model), POINTER(c_int)])
+fillprototype(libsvm.svm_get_model_probA_vector, None, [POINTER(svm_model), POINTER(c_double)])
+fillprototype(libsvm.svm_get_model_probB_vector, None, [POINTER(svm_model), POINTER(c_double)])
+
+
+[+]In svmutil.py add helper function to compute the distance to hyperplane:
+	distance_to_hyperplane
+
+
+Additional Notes
+============================
+For copyright information please check "libsvm_COPYRIGHT" file. 
+
+    * Redistributions of source code must retain the above copyright 
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright 
+      notice, this list of conditions and the following disclaimer in 
+      the documentation and/or other materials provided with the distribution
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+POSSIBILITY OF SUCH DAMAGE.
